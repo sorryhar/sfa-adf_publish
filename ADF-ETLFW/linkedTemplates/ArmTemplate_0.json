@@ -1,0 +1,865 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "ADF-ETLFW"
+		},
+		"AWLT_LS_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AWLT_LS'"
+		},
+		"BRONZE_LS_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'BRONZE_LS'"
+		},
+		"Metadata_LS_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'Metadata_LS'"
+		},
+		"ls_adls_bronze_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_adls_bronze'"
+		},
+		"ls_adls_metadata_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_adls_metadata'"
+		},
+		"ls_akv_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://akv-etl-fw.vault.azure.net/"
+		},
+		"AWLT_LS_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "as1src.database.windows.net"
+		},
+		"AWLT_LS_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "db_free_adventureworkslt"
+		},
+		"AWLT_LS_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "as1src"
+		},
+		"BRONZE_LS_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "as1src.database.windows.net"
+		},
+		"BRONZE_LS_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "db_free_bronze"
+		},
+		"BRONZE_LS_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "as1src"
+		},
+		"Metadata_LS_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "as1src.database.windows.net"
+		},
+		"Metadata_LS_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "db_free_metadata"
+		},
+		"Metadata_LS_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "as1src"
+		},
+		"dls_asql_Bronze_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "@{linkedService().uri}"
+		},
+		"dls_asql_Bronze_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().catalog}"
+		},
+		"dls_asql_Bronze_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "@{linkedService().un}"
+		},
+		"dls_asql_source_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "@{linkedService().uri}"
+		},
+		"dls_asql_source_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().catalog}"
+		},
+		"dls_asql_source_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "@{linkedService().un}"
+		},
+		"ls_adls_bronze_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://sacclakehouse.dfs.core.windows.net/"
+		},
+		"ls_adls_metadata_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://sacclakehouse.dfs.core.windows.net/"
+		},
+		"dls_salesforce_properties_typeProperties_environmentUrl": {
+			"type": "string",
+			"defaultValue": "@{linkedService().salesforceUri}"
+		},
+		"dls_salesforce_properties_typeProperties_clientId": {
+			"type": "string",
+			"defaultValue": "@{linkedService().salseforceClientId}"
+		},
+		"dls_asql_Gold_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "@{linkedService().uri}"
+		},
+		"dls_asql_Gold_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().catalog}"
+		},
+		"dls_asql_Gold_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "@{linkedService().un}"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/default')]",
+			"type": "Microsoft.DataFactory/factories/managedVirtualNetworks",
+			"apiVersion": "2018-06-01",
+			"properties": {},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_akv')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_akv_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				},
+				"managedVirtualNetwork": {
+					"type": "ManagedVirtualNetworkReference",
+					"referenceName": "default"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AWLT_LS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('AWLT_LS_properties_typeProperties_server')]",
+					"database": "[parameters('AWLT_LS_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('AWLT_LS_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('AWLT_LS_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/BRONZE_LS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('BRONZE_LS_properties_typeProperties_server')]",
+					"database": "[parameters('BRONZE_LS_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('BRONZE_LS_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('BRONZE_LS_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Metadata_LS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('Metadata_LS_properties_typeProperties_server')]",
+					"database": "[parameters('Metadata_LS_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('Metadata_LS_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('Metadata_LS_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dls_asql_Bronze')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"uri": {
+						"type": "string"
+					},
+					"catalog": {
+						"type": "string"
+					},
+					"un": {
+						"type": "string"
+					},
+					"up": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('dls_asql_Bronze_properties_typeProperties_server')]",
+					"database": "[parameters('dls_asql_Bronze_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('dls_asql_Bronze_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_akv",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": {
+							"value": "@linkedService().up",
+							"type": "Expression"
+						}
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_akv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dls_asql_source')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"uri": {
+						"type": "string"
+					},
+					"catalog": {
+						"type": "string"
+					},
+					"un": {
+						"type": "string"
+					},
+					"up": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('dls_asql_source_properties_typeProperties_server')]",
+					"database": "[parameters('dls_asql_source_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('dls_asql_source_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_akv",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": {
+							"value": "@linkedService().up",
+							"type": "Expression"
+						}
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_akv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_bronze')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_bronze_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adls_bronze_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_metadata')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_metadata_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adls_metadata_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dls_salesforce')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"salesforceUri": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"salseforceClientId": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"salseforceClientS": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"salesforceApiVersion": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					}
+				},
+				"annotations": [],
+				"type": "SalesforceV2",
+				"typeProperties": {
+					"environmentUrl": "[parameters('dls_salesforce_properties_typeProperties_environmentUrl')]",
+					"clientId": "[parameters('dls_salesforce_properties_typeProperties_clientId')]",
+					"clientSecret": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_akv",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": {
+							"value": "@linkedService().salseforceClientS",
+							"type": "Expression"
+						}
+					},
+					"apiVersion": "@{linkedService().salesforceApiVersion}",
+					"authenticationType": "OAuth2ClientCredential"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_akv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dls_asql_Gold')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"uri": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"catalog": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"un": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					},
+					"up": {
+						"type": "string",
+						"defaultValue": "placeholder"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('dls_asql_Gold_properties_typeProperties_server')]",
+					"database": "[parameters('dls_asql_Gold_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('dls_asql_Gold_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_akv",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": {
+							"value": "@linkedService().up",
+							"type": "Expression"
+						}
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_akv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MetadataDS')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Metadata_LS",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "ETLFWDS"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "Control",
+					"table": "MainControl"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Metadata_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dds_asql_Bronze')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "dls_asql_Bronze",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"uri": {
+							"value": "@dataset().datalink.uri",
+							"type": "Expression"
+						},
+						"catalog": {
+							"value": "@dataset().datalink.catalog",
+							"type": "Expression"
+						},
+						"un": {
+							"value": "@dataset().datalink.un",
+							"type": "Expression"
+						},
+						"up": {
+							"value": "@dataset().datalink.up",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"dataset": {
+						"type": "object"
+					},
+					"datalink": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "ETLFWDS"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().dataset.schemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().dataset.objectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/dls_asql_Bronze')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dds_asql_Source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "dls_asql_source",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"uri": {
+							"value": "@dataset().datalink.uri",
+							"type": "Expression"
+						},
+						"catalog": {
+							"value": "@dataset().datalink.catalog",
+							"type": "Expression"
+						},
+						"un": {
+							"value": "@dataset().datalink.un",
+							"type": "Expression"
+						},
+						"up": {
+							"value": "@dataset().datalink.up",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"dataset": {
+						"type": "object"
+					},
+					"datalink": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "ETLFWDS"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().dataset.schemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().dataset.objectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/dls_asql_source')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dds_etl_fw_metadata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_metadata",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"location": {
+						"type": "string"
+					},
+					"path": {
+						"type": "string"
+					},
+					"configName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ETLFWDS"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().configName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().path",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().location",
+							"type": "Expression"
+						}
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_metadata')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_asql_Bronze')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "BRONZE_LS",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"SchemaName": {
+						"type": "string"
+					},
+					"ObjectName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().SchemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().ObjectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/BRONZE_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_asql_Source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AWLT_LS",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"SchemaName": {
+						"type": "string"
+					},
+					"ObjectName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().SchemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().ObjectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AWLT_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dds_salesforce_target')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "dls_salesforce",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"salesforceUri": {
+							"value": "@dataset().datalink.uri",
+							"type": "Expression"
+						},
+						"salseforceClientId": {
+							"value": "@dataset().datalink.un",
+							"type": "Expression"
+						},
+						"salseforceClientS": {
+							"value": "@dataset().datalink.up",
+							"type": "Expression"
+						},
+						"salesforceApiVersion": {
+							"value": "@dataset().datalink.apiVersion",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"dataset": {
+						"type": "object"
+					},
+					"datalink": {
+						"type": "object"
+					}
+				},
+				"annotations": [],
+				"type": "SalesforceV2Object",
+				"schema": [],
+				"typeProperties": {
+					"objectApiName": {
+						"value": "@dataset().dataset.objectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/dls_salesforce')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dds_asql_Gold')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "dls_asql_Gold",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"uri": {
+							"value": "@dataset().datalink.uri",
+							"type": "Expression"
+						},
+						"catalog": {
+							"value": "@dataset().datalink.catalog",
+							"type": "Expression"
+						},
+						"un": {
+							"value": "@dataset().datalink.un",
+							"type": "Expression"
+						},
+						"up": {
+							"value": "@dataset().datalink.up",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"dataset": {
+						"type": "object"
+					},
+					"datalink": {
+						"type": "object"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().dataset.schemaName",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().dataset.objectName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/dls_asql_Gold')]"
+			]
+		}
+	]
+}
