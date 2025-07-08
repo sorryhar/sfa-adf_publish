@@ -1,0 +1,48 @@
+{
+	"name": "dds_asql_Gold",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dls_asql_Gold",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"uri": {
+					"value": "@dataset().datalink.uri",
+					"type": "Expression"
+				},
+				"catalog": {
+					"value": "@dataset().datalink.catalog",
+					"type": "Expression"
+				},
+				"un": {
+					"value": "@dataset().datalink.un",
+					"type": "Expression"
+				},
+				"up": {
+					"value": "@dataset().datalink.up",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"dataset": {
+				"type": "object"
+			},
+			"datalink": {
+				"type": "object"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().dataset.schemaName",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().dataset.objectName",
+				"type": "Expression"
+			}
+		}
+	}
+}

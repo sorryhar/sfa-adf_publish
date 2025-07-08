@@ -1,0 +1,47 @@
+{
+	"name": "dls_salesforce",
+	"properties": {
+		"parameters": {
+			"salesforceUri": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			},
+			"salseforceClientId": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			},
+			"salseforceClientS": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			},
+			"salesforceApiVersion": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			}
+		},
+		"annotations": [],
+		"type": "SalesforceV2",
+		"typeProperties": {
+			"environmentUrl": "@{linkedService().salesforceUri}",
+			"clientId": "@{linkedService().salseforceClientId}",
+			"clientSecret": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_akv",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": {
+					"value": "@linkedService().salseforceClientS",
+					"type": "Expression"
+				}
+			},
+			"apiVersion": "@{linkedService().salesforceApiVersion}",
+			"authenticationType": "OAuth2ClientCredential"
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

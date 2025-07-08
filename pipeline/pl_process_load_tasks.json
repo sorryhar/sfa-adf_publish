@@ -1,0 +1,142 @@
+{
+	"name": "pl_process_load_tasks",
+	"properties": {
+		"activities": [
+			{
+				"name": "act_process_each_load_task",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.tasksToProcess",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "act_execute_load_task",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "act_get_datasets",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_load_object_to_salesforce",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"metadataLocation": {
+										"value": "@pipeline().parameters.metadataLocation",
+										"type": "Expression"
+									},
+									"metadataPath": {
+										"value": "@pipeline().parameters.metadataPath",
+										"type": "Expression"
+									},
+									"maxConcurrentTasks": {
+										"value": "@pipeline().parameters.maxConcurrentTasks",
+										"type": "Expression"
+									},
+									"datalinks": {
+										"value": "@pipeline().parameters.datalinks",
+										"type": "Expression"
+									},
+									"datasets": {
+										"value": "@activity('act_get_datasets').output.value",
+										"type": "Expression"
+									},
+									"taskToProcess": {
+										"value": "@item()",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "act_get_datasets",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "JsonSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "JsonReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "dds_etl_fw_metadata",
+									"type": "DatasetReference",
+									"parameters": {
+										"location": {
+											"value": "@pipeline().parameters.metadataLocation",
+											"type": "Expression"
+										},
+										"path": {
+											"value": "@concat(pipeline().parameters.metadataPath,'/dataset')",
+											"type": "Expression"
+										},
+										"configName": {
+											"value": "load.json",
+											"type": "Expression"
+										}
+									}
+								},
+								"firstRowOnly": false
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"metadataLocation": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			},
+			"metadataPath": {
+				"type": "string",
+				"defaultValue": "placeholder"
+			},
+			"maxConcurrentTasks": {
+				"type": "int",
+				"defaultValue": 20
+			},
+			"tasksToProcess": {
+				"type": "array",
+				"defaultValue": []
+			},
+			"datalinks": {
+				"type": "array",
+				"defaultValue": []
+			}
+		},
+		"folder": {
+			"name": "extension/level 001"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,44 @@
+{
+	"name": "dds_salesforce_target",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dls_salesforce",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"salesforceUri": {
+					"value": "@dataset().datalink.uri",
+					"type": "Expression"
+				},
+				"salseforceClientId": {
+					"value": "@dataset().datalink.un",
+					"type": "Expression"
+				},
+				"salseforceClientS": {
+					"value": "@dataset().datalink.up",
+					"type": "Expression"
+				},
+				"salesforceApiVersion": {
+					"value": "@dataset().datalink.apiVersion",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"dataset": {
+				"type": "object"
+			},
+			"datalink": {
+				"type": "object"
+			}
+		},
+		"annotations": [],
+		"type": "SalesforceV2Object",
+		"schema": [],
+		"typeProperties": {
+			"objectApiName": {
+				"value": "@dataset().dataset.objectName",
+				"type": "Expression"
+			}
+		}
+	}
+}
