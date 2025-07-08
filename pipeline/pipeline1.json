@@ -11,9 +11,18 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "var1",
+					"value": "hello world"
+				}
 			}
 		],
+		"variables": {
+			"var1": {
+				"type": "String"
+			}
+		},
 		"annotations": []
 	}
 }
