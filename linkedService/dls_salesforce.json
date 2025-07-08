@@ -39,7 +39,7 @@
 			"authenticationType": "OAuth2ClientCredential"
 		},
 		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
+			"referenceName": "AutoResolveIntegrationRuntime-KP",
 			"type": "IntegrationRuntimeReference"
 		}
 	},
