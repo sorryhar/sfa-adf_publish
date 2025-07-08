@@ -1,0 +1,9 @@
+{
+	"name": "sfa-df",
+	"location": "southeastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "aedf7507-9fc1-4737-a286-168fe2bf1a9c",
+		"tenantId": "76a2ae5a-9f00-4f6b-95ed-5d33d77c4d61"
+	}
+}
