@@ -37,7 +37,7 @@
 			}
 		},
 		"connectVia": {
-			"referenceName": "AutoResolveIntegrationRuntime",
+			"referenceName": "AutoResolveIntegrationRuntime-KP",
 			"type": "IntegrationRuntimeReference"
 		}
 	},
